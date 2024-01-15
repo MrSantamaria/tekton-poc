@@ -74,3 +74,34 @@ kubectl(oc) get pipelineruns
 When I ran 'oc get pods' I didn't see any pods created.
 In this case running 'oc describe pipelinerun.tekton.dev/example-pipeline-passing-params-through-task-run-wdrvt created' will give you more information on why the pipeline failed.
 In this case I had to see the individual taskruns to see why the pipeline failed. The taskruns could not create pods due to securityContext constraints. These have been updated in the taskruns in this repo.
+
+## Troubleshooting Openshift
+
+Spoke with @\mshen on this since he was around.
+So I'm creating a pod like this
+    - name: run-container
+      image: quay.io/dsantama/acceptance_test:latest
+      securityContext:
+        allowPrivilegeEscalation: false
+        runAsNonRoot: true
+        runAsUser: 1001
+        capabilities:
+          drop:
+            - ALL
+        seccompProfile:
+          type: RuntimeDefault
+Now I did the runAsuser:1001 on purpose to match my docker file over here.
+https://github.com/MrSantamaria/acceptance_test/blob/main/Dockerfile#L51
+The problem I'm getting is that my pod needs to create a file inside of /app
+Which when I run docker run -it --name test-container myapp:latest /bin/sh it can.
+So I'm wondering if this could be an openshift restriction I don't know about.
+Maybe it is as simple as swapping the acceptance user to be in the range of?
+Invalid value: 1001: must be in the ranges: [1001030000, 1001039999],
+But I can't seem to understand why that matters inside of the pod environment.
+I think I have it troubleshooted to be part of
+seccompProfile:
+          type: RuntimeDefault
+but do we restrict pods from creating files like this?
+
+It sounds like you’re running into a security context constraint: https://docs.openshift.com/container-platform/4.14/authentication/managing-security-context-constraints.html#authorization-SCC-[…]ing-internal-oauth
+They can be configured with UID ranges at least^

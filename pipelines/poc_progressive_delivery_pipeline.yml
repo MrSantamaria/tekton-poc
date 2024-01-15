@@ -1,0 +1,59 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: poc-progressive-delivery-pipeline
+spec:
+  params:
+    # These will be part of the dynamic generation of the pipeline
+    - name: operator
+      type: string
+      default: "aws-vpce-operator"
+    - name: env
+      type: string
+      default: "int"
+    - name: selectors
+      type: string
+      default: "ap-northeast-1,main,!fedramp"
+    - name: imagetag
+      type: string
+      default: "6cee1df"
+    - name: repoUrl
+      type: string
+      default: "https://github.com/MrSantamaria/tekton-poc"
+    - name: filePath
+      type: string
+      default: "poc_saas_avo_progressive_delivery.yml"
+    - name: branchName
+      type: string
+      # This will have to also be dynamically generated
+      default: "update-ref-for-aws-vpce-operator-stage-us-west-2-canary"
+  tasks:
+    - name: first-task-run-acceptance-test-integration
+      taskRef:
+        name: run-acceptance-test
+      # These are the parameters that will be passed to the TaskRun
+      # For a full solution we will have to generate this file dynamically
+      params:
+        # https://github.com/openshift/aws-vpce-operator/tree/main
+        - name: operator
+          value: $(params.operator)
+        - name: env
+          value: $(params.env)
+        - name: selectors
+          value: $(params.selectors)
+        - name: imagetag
+          value: $(params.imagetag)
+    - name: update-yaml-and-create-pr-task
+      runAfter:
+        - first-task-run-acceptance-test-integration
+      taskRef:
+        name: update-yaml-and-create-pr
+      params:
+        - name: repoUrl
+          value: $(params.repoUrl)
+        - name: filePath
+          value: $(params.filePath)
+        - name: branchName
+          value: $(params.branchName)
+        - name: imagetag
+          value: $(params.imagetag)

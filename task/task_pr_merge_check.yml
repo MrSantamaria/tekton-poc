@@ -1,0 +1,49 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: pr-merge-check
+spec:
+  params:
+    - name: pr-url
+      description: URL of the Pull Request
+  steps:
+    - name: check-pr-merge-status
+      image: curlimages/curl:latest  # Using curl image for demonstration; you might need a different image.
+      resources: # Define resource requirements - Since this job could run for a long time the goal is to keep it small.
+        requests:
+          memory: "64Mi"  # Minimum memory requested
+          cpu: "100m"     # Minimum CPU requested (100m CPU means 0.1 core)
+        limits:
+          memory: "128Mi" # Maximum memory used
+          cpu: "200m"     # Maximum CPU used (200m CPU means 0.2 core)
+      script: |
+        #!/bin/bash
+        set -e
+
+        PR_URL="$(params.pr-url)"
+
+        # Initialize the time counter (in minutes)
+        MAX_TIME=4320  # 3 days in minutes (3*24*60)
+        COUNT=0
+
+        # Extract necessary info from PR URL
+        OWNER=$(echo $PR_URL | cut -d '/' -f 4)
+        REPO=$(echo $PR_URL | cut -d '/' -f 5)
+        PR_NUMBER=$(echo $PR_URL | cut -d '/' -f 7)
+
+        while [ $COUNT -lt $MAX_TIME ]; do
+          # Check the merge status of the PR
+          PR_STATUS=$(curl -s https://api.github.com/repos/$OWNER/$REPO/pulls/$PR_NUMBER | jq '.merged')
+
+          if [ "$PR_STATUS" = "true" ]; then
+            echo "PR is merged."
+            exit 0
+          fi
+
+          # Wait for 1 minute before next check
+          sleep 60
+          COUNT=$((COUNT+1))
+        done
+
+        echo "PR is not merged after 3 days."
+        exit 1

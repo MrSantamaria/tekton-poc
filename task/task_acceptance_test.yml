@@ -1,0 +1,57 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: run-acceptance-test
+spec:
+  params:
+    - name: operator
+      type: string
+      description: The name of the operator to test (e.g. "aws-vpce-operator")
+    - name: env
+      type: string
+      description: The environment parameter (e.g. "int")
+    - name: selectors
+      type: string
+      description: The selectors parameter (e.g. "ap-northeast-1,main")
+    - name: imagetag
+      type: string
+      description: The imagetag hash of the operator being promoted (e.g. "74ef3c6")
+  steps:
+    - name: run-container
+      image: quay.io/dsantama/acceptance_test:latest
+      securityContext:
+        allowPrivilegeEscalation: false
+        runAsNonRoot: true
+        capabilities:
+          drop:
+            - ALL
+        # https://docs.openshift.com/container-platform/4.14/authentication/managing-security-context-constraints.html#authorization-SCC-strategies_configuring-internal-oauth
+        # I had to switch the Acceptance Test to user 1001030000
+        # I'm going to have to look more into this to make sure this pod is set up correctly for scale operations
+        seccompProfile:
+          type: RuntimeDefault
+      command: ["sh", "-c"]
+      env:
+        - name: TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: diego-secrets
+              key: OCM_TOKEN
+        - name: TELEMETER_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: diego-secrets
+              key: TELEMETER_CLIENT_ID
+        - name: TELEMETER_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: diego-secrets
+              key: TELEMETER_SECRET
+      args:
+        - |
+          echo "Running acceptance tests with parameters:"
+          echo "Operator: $(params.operator)"
+          echo "Environment: $(params.env)"
+          echo "Selectors: $(params.selectors)"
+          echo "Image Tag: $(params.imagetag)"
+          ./acceptance-test --operator $(params.operator) --env $(params.env) --selectors $(params.selectors) --imagetag $(params.imagetag)

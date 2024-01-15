@@ -1,0 +1,15 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: example-pipeline
+spec:
+  tasks:
+    - name: run-pass-task
+      taskRef:
+        name: echo-pass
+    - name: run-fail-task
+      taskRef:
+        name: echo-fail
+      runAfter:
+        - run-pass-task
+

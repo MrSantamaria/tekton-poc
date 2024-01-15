@@ -1,0 +1,24 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: sample-second-task-param-consumer
+spec:
+  params:
+    - name: operator_hash
+      type: string
+    - name: random_string
+      type: string
+  steps:
+    - name: use-inputs
+      image: ubuntu
+      securityContext:
+        allowPrivilegeEscalation: false
+        runAsNonRoot: true
+        capabilities:
+          drop:
+            - ALL
+        seccompProfile:
+          type: RuntimeDefault
+      script: |
+        echo "Received operator_hash: $(params.operator_hash)"
+        echo "Received Diego's random_string: $(params.random_string)"

@@ -1,0 +1,68 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: update-yaml-and-create-pr
+spec:
+  params:
+    - name: repoUrl
+      type: string
+      description: URL of the Git repository
+    - name: filePath
+      type: string
+      description: Path to the YAML file in the repository
+    - name: imagetag
+      type: string
+      description: The new ref value to be set
+    - name: branchName
+      type: string
+      description: The name of the new branch to create for the PR
+  workspaces:
+    - name: git-credentials
+      description: Workspace to hold credentials for Git and GitHub API
+  steps:
+    - name: clone-repo
+      image: alpine/git
+      script: |
+        git clone $(params.repoUrl) /workspace/repo
+
+    - name: update-yaml
+      image: mikefarah/yq
+      script: |
+        yq eval '.resourceTemplates[] | select(.name == "aws-vpce-operator-stage-sectors").targets[] | select(.name == "aws-vpce-operator-stage-us-west-2-canary").ref = strenv(imagetag)' -i /workspace/repo/$(params.filePath)
+
+    - name: create-branch-commit
+      image: alpine/git
+      # In the final iteration of this task, a bot account will be used to commit and create the PR
+      script: |
+        cd /workspace/repo
+        git config user.email "dsantama@redhat.com"
+        git config user.name "MrSantamaria"
+        git checkout -b $(params.branchName)
+        git add $(params.filePath)
+        git commit -m "Update ref value for aws-vpce-operator-stage-us-west-2-canary"
+
+    - name: push-and-create-pr
+      image: curlimages/curl
+      script: |
+        cd /workspace/repo
+        # Push the branch
+        git push origin $(params.branchName)
+        # Create a pull request
+        PR_DATA=$(cat <<EOF
+        {
+          "title": "Update ref for aws-vpce-operator-stage-us-west-2-canary",
+          "head": "$(params.branchName)",
+          "base": "main",
+          "body": "This PR updates the ref for aws-vpce-operator-stage-us-west-2-canary"
+        }
+        EOF
+        )
+        curl -X POST \
+          -H "Authorization: token $(cat $(workspaces.git-credentials.path)/github-token)" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/MrSantamaria/tekton-poc/pulls \
+          -d "$PR_DATA"
+  volumes:
+    - name: git-credentials
+      secret:
+        secretName: diego-secrets

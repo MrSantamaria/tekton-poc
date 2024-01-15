@@ -1,0 +1,20 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: echo-pass
+spec:
+  steps:
+    - name: echo-message
+      image: ubuntu
+      script: |
+        #!/bin/bash
+        echo "Hello World I'm an example of a pass pipeline"
+      securityContext:
+        allowPrivilegeEscalation: false
+        runAsNonRoot: true
+        capabilities:
+          drop:
+            - ALL
+        seccompProfile:
+          type: RuntimeDefault
+

@@ -1,0 +1,21 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: echo-fail
+spec:
+  steps:
+    - name: echo-message-and-fail
+      image: ubuntu
+      script: |
+        #!/bin/bash
+        echo "Hello World I'm an example of a fail pipeline"
+        exit 1
+      securityContext:
+        allowPrivilegeEscalation: false
+        runAsNonRoot: true
+        capabilities:
+          drop:
+            - ALL
+        seccompProfile:
+          type: RuntimeDefault
+

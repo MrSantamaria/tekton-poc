@@ -1,0 +1,17 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: example-pipeline-passing-params-through-task
+spec:
+  tasks:
+    - name: run-first-task-produces-outputs
+      taskRef:
+        name: sample-first-task-param-output
+    - name: run-second-task-uses-outputs-as-params
+      taskRef:
+        name: sample-second-task-param-consumer
+      params:
+        - name: operator_hash
+          value: $(tasks.run-first-task-produces-outputs.results.operator_hash)
+        - name: random_string
+          value: $(tasks.run-first-task-produces-outputs.results.random_string)

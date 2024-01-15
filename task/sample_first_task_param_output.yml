@@ -1,0 +1,24 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: sample-first-task-param-output
+spec:
+  steps:
+    - name: output-generator
+      image: ubuntu
+      securityContext:
+        allowPrivilegeEscalation: false
+        runAsNonRoot: true
+        capabilities:
+          drop:
+            - ALL
+        seccompProfile:
+          type: RuntimeDefault
+      script: |
+        echo "012345" > $(results.operator_hash.path)
+        echo "Diego's random string to pass multiple params" > $(results.random_string.path)
+  results:
+    - name: operator_hash
+      description: The Hash that will move through task
+    - name: random_string
+      description: random_string that will move through task
