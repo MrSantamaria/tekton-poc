@@ -1,0 +1,40 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: poc-progressive-delivery-pipeline-test
+spec:
+  params:
+    - name: operator
+      type: string
+      default: ""
+    - name: env
+      type: string
+      default: ""
+    - name: selectors
+      type: string
+      default: ""
+    - name: imagetag
+      type: string
+      default: ""
+    - name: repoUrl
+      type: string
+      default: ""
+    - name: filePath
+      type: string
+      default: ""
+    - name: branchName
+      type: string
+      default: ""
+  tasks:
+    - name: update-yaml-and-create-pr-task
+      taskRef:
+        name: update-yaml-and-create-pr
+      params:
+        - name: repoUrl
+          value: $(params.repoUrl)
+        - name: filePath
+          value: $(params.filePath)
+        - name: branchName
+          value: $(params.branchName)
+        - name: imagetag
+          value: $(params.imagetag)

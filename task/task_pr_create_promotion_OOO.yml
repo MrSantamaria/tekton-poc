@@ -1,0 +1,115 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: update-yaml-and-create-pr-OOO
+spec:
+  params:
+    - name: repoUrl
+      type: string
+      description: URL of the Git repository
+    - name: filePath
+      type: string
+      description: Path to the YAML file in the repository
+    - name: imagetag
+      type: string
+      description: The new ref value to be set
+    - name: branchName
+      type: string
+      description: The name of the new branch to create for the PR
+  steps:
+    - name: clone-repo
+      image: alpine/git
+      volumeMounts:
+        - name: repo-volume
+          mountPath: /workspace/repo
+      securityContext:
+        allowPrivilegeEscalation: false
+        runAsNonRoot: true
+        runAsUser: 1001030000
+        capabilities:
+          drop:
+            - ALL
+        seccompProfile:
+          type: RuntimeDefault
+      script: |
+        if ! git clone $(params.repoUrl) /workspace/repo; then
+          echo "Cloning failed"
+          exit 1
+        fi
+        echo "Cloning successful"
+    - name: update-yaml
+      image: mikefarah/yq
+      volumeMounts:
+        - name: repo-volume
+          mountPath: /workspace/repo
+      securityContext:
+        allowPrivilegeEscalation: false
+        runAsNonRoot: true
+        runAsUser: 1001030000
+        capabilities:
+          drop:
+            - ALL
+        seccompProfile:
+          type: RuntimeDefault
+      script: |
+        yq eval '.resourceTemplates[] | select(.name == "aws-vpce-operator-stage-sectors").targets[] | select(.name == "aws-vpce-operator-stage-us-west-2-canary").ref = "$(params.imagetag)"' -i /workspace/repo/$(params.filePath)
+        cat /workspace/repo/$(params.filePath)
+    - name: create-branch-commit
+      image: alpine/git
+      volumeMounts:
+        - name: repo-volume
+          mountPath: /workspace/repo
+      securityContext:
+        allowPrivilegeEscalation: false
+        runAsNonRoot: true
+        runAsUser: 1001030000
+        capabilities:
+          drop:
+            - ALL
+        seccompProfile:
+          type: RuntimeDefault
+      script: |
+        cd /workspace/repo
+        git -c user.email="dsantama@redhat.com" -c user.name="MrSantamaria" checkout -b $(params.branchName)
+        git add $(params.filePath)
+        git commit -m "Update ref value for aws-vpce-operator-stage-us-west-2-canary"
+    - name: push-and-create-pr
+      image: curlimages/curl
+      env:
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: diego-secrets
+              key: GITHUB_TOKEN
+      volumeMounts:
+        - name: repo-volume
+          mountPath: /workspace/repo
+      securityContext:
+        allowPrivilegeEscalation: false
+        runAsNonRoot: true
+        runAsUser: 1001030000
+        capabilities:
+          drop:
+            - ALL
+        seccompProfile:
+          type: RuntimeDefault
+      # Ductaping for PoC https://stackoverflow.com/questions/76659970/how-to-add-git-to-docker-curlimage
+      script: |
+        apt update && apt install -y git
+        cd /workspace/repo
+        git push origin $(params.branchName)
+        PR_DATA=$(cat <<EOF
+        {
+          "title": "Update ref for aws-vpce-operator-stage-us-west-2-canary",
+          "head": "$(params.branchName)",
+          "base": "main",
+          "body": "This PR updates the ref for aws-vpce-operator-stage-us-west-2-canary"
+        }
+        EOF
+        )
+        curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
+        -H "Accept: application/vnd.github.v3+json" \
+        https://api.github.com/repos/MrSantamaria/tekton-poc/pulls -d "$PR_DATA"
+  volumes:
+    - name: repo-volume
+      emptyDir: {}

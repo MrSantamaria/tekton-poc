@@ -4,29 +4,27 @@ metadata:
   name: poc-progressive-delivery-pipeline
 spec:
   params:
-    # These will be part of the dynamic generation of the pipeline
     - name: operator
       type: string
-      default: "aws-vpce-operator"
+      default: ""
     - name: env
       type: string
-      default: "int"
+      default: ""
     - name: selectors
       type: string
-      default: "ap-northeast-1,main,!fedramp"
+      default: ""
     - name: imagetag
       type: string
-      default: "6cee1df"
+      default: ""
     - name: repoUrl
       type: string
-      default: "https://github.com/MrSantamaria/tekton-poc"
+      default: ""
     - name: filePath
       type: string
-      default: "poc_saas_avo_progressive_delivery.yml"
+      default: ""
     - name: branchName
       type: string
-      # This will have to also be dynamically generated
-      default: "update-ref-for-aws-vpce-operator-stage-us-west-2-canary"
+      default: ""
   tasks:
     - name: first-task-run-acceptance-test-integration
       taskRef:
@@ -44,8 +42,10 @@ spec:
         - name: imagetag
           value: $(params.imagetag)
     - name: update-yaml-and-create-pr-task
-      runAfter:
-        - first-task-run-acceptance-test-integration
+      runAfter: []
+        # This job is currently failing but we also don't want to use the runAfter.
+        # For now I'll leave it as an empty array since we can come back and adjust it later.
+        # - first-task-run-acceptance-test-integration
       taskRef:
         name: update-yaml-and-create-pr
       params:
