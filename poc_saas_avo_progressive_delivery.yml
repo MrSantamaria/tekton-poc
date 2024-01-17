@@ -1,4 +1,3 @@
----
 $schema: /app-sre/saas-file-2.yml
 labels:
   service: osd-operators
@@ -13,124 +12,122 @@ slack:
     $ref: /dependencies/slack/redhat-internal.yml
   channel: team-srep-info
 managedResourceTypes:
-- SelectorSyncSet
-
+  - SelectorSyncSet
 imagePatterns:
-- quay.io/app-sre/aws-vpce-operator-registry
-
+  - quay.io/app-sre/aws-vpce-operator-registry
 use_channel_in_image_tag: true
 validateTargetsInApp: true
 resourceTemplates:
-- name: aws-vpce-operator-integration-sectors
-  url: https://github.com/openshift/aws-vpce-operator
-  path: /hack/olm-registry/olm-artifacts-hypershift-template.yaml
-  parameters:
-    REGISTRY_IMG: quay.io/app-sre/aws-vpce-operator-registry
-  targets:
-  # integration sector progression order:
-  # * us-east-1-canary
-  # * ap-northeast-1-main
-  # * us-west-2-main
-  - name: aws-vpce-operator-integration-ap-northeast-1-main
-    provider: dynamic
-    namespaceSelector:
-      jsonPathSelectors:
-        include:
-        - namespace[?(@.cluster.name=~"hive.*" & @.name=="cluster-scope" & @.environment.labels.type=="integration")]
-    ref: main
+  - name: aws-vpce-operator-integration-sectors
+    url: https://github.com/openshift/aws-vpce-operator
+    path: /hack/olm-registry/olm-artifacts-hypershift-template.yaml
     parameters:
-      REGION: ap-northeast-1
-      SECTOR_NAME: main
-    upstream:
-      instance:
-        $ref: /dependencies/ci-int/ci-int.yml
-      name: openshift-aws-vpce-operator-gh-build-main
-  - name: aws-vpce-operator-integration-us-west-2-main
-    provider: dynamic
-    namespaceSelector:
-      jsonPathSelectors:
-        include:
-        - namespace[?(@.cluster.name=~"hive.*" & @.name=="cluster-scope" & @.environment.labels.type=="integration")]
-    ref: main
+      REGISTRY_IMG: quay.io/app-sre/aws-vpce-operator-registry
+    targets:
+      # integration sector progression order:
+      # * us-east-1-canary
+      # * ap-northeast-1-main
+      # * us-west-2-main
+      - name: aws-vpce-operator-integration-ap-northeast-1-main
+        provider: dynamic
+        namespaceSelector:
+          jsonPathSelectors:
+            include:
+              - namespace[?(@.cluster.name=~"hive.*" & @.name=="cluster-scope" & @.environment.labels.type=="integration")]
+        ref: main
+        parameters:
+          REGION: ap-northeast-1
+          SECTOR_NAME: main
+        upstream:
+          instance:
+            $ref: /dependencies/ci-int/ci-int.yml
+          name: openshift-aws-vpce-operator-gh-build-main
+      - name: aws-vpce-operator-integration-us-west-2-main
+        provider: dynamic
+        namespaceSelector:
+          jsonPathSelectors:
+            include:
+              - namespace[?(@.cluster.name=~"hive.*" & @.name=="cluster-scope" & @.environment.labels.type=="integration")]
+        ref: main
+        parameters:
+          REGION: us-west-2
+          SECTOR_NAME: main
+        upstream:
+          instance:
+            $ref: /dependencies/ci-int/ci-int.yml
+          name: openshift-aws-vpce-operator-gh-build-main
+  - name: aws-vpce-operator-stage-sectors
+    url: https://github.com/openshift/aws-vpce-operator
+    path: /hack/olm-registry/olm-artifacts-hypershift-template.yaml
     parameters:
-      REGION: us-west-2
-      SECTOR_NAME: main
-    upstream:
-      instance:
-        $ref: /dependencies/ci-int/ci-int.yml
-      name: openshift-aws-vpce-operator-gh-build-main
-- name: aws-vpce-operator-stage-sectors
-  url: https://github.com/openshift/aws-vpce-operator
-  path: /hack/olm-registry/olm-artifacts-hypershift-template.yaml
-  parameters:
-    REGISTRY_IMG: quay.io/app-sre/aws-vpce-operator-registry
-  targets:
-  # us-west-2-canary
-  # ap-northeast-1-main
-  # eu-central-1-main
-  # us-west-2-main
-  # us-east-1-ibm-infra
-  - name: aws-vpce-operator-stage-us-west-2-canary
-    provider: dynamic
-    namespaceSelector:
-      jsonPathSelectors:
-        include:
-        - namespace[?(@.cluster.name=~"hive.*" & @.name=="cluster-scope" & @.environment.labels.type=="stage")]
-    ref: 1234
+      REGISTRY_IMG: quay.io/app-sre/aws-vpce-operator-registry
+    targets:
+      # us-west-2-canary
+      # ap-northeast-1-main
+      # eu-central-1-main
+      # us-west-2-main
+      # us-east-1-ibm-infra
+      - name: aws-vpce-operator-stage-us-west-2-canary
+        provider: dynamic
+        namespaceSelector:
+          jsonPathSelectors:
+            include:
+              - namespace[?(@.cluster.name=~"hive.*" & @.name=="cluster-scope" & @.environment.labels.type=="stage")]
+        ref: 6cee1df
+        parameters:
+          REGION: us-west-2
+          SECTOR_NAME: canary
+      - name: aws-vpce-operator-stage-ap-northeast-1-main
+        provider: dynamic
+        namespaceSelector:
+          jsonPathSelectors:
+            include:
+              - namespace[?(@.cluster.name=~"hive.*" & @.name=="cluster-scope" & @.environment.labels.type=="stage")]
+        ref: 1234
+        parameters:
+          REGION: ap-northeast-1
+          SECTOR_NAME: main
+      - name: aws-vpce-operator-stage-eu-central-1-main
+        provider: dynamic
+        namespaceSelector:
+          jsonPathSelectors:
+            include:
+              - namespace[?(@.cluster.name=~"hive.*" & @.name=="cluster-scope" & @.environment.labels.type=="stage")]
+        ref: 1234
+        parameters:
+          REGION: eu-central-1
+          SECTOR_NAME: main
+      - name: aws-vpce-operator-stage-us-west-2-main
+        provider: dynamic
+        namespaceSelector:
+          jsonPathSelectors:
+            include:
+              - namespace[?(@.cluster.name=~"hive.*" & @.name=="cluster-scope" & @.environment.labels.type=="stage")]
+        ref: 1234
+        parameters:
+          REGION: us-west-2
+          SECTOR_NAME: main
+      - name: aws-vpce-operator-stage-us-east-1-ibm-infra
+        provider: dynamic
+        namespaceSelector:
+          jsonPathSelectors:
+            include:
+              - namespace[?(@.cluster.name=~"hive.*" & @.name=="cluster-scope" & @.environment.labels.type=="stage")]
+        ref: 1234
+        parameters:
+          REGION: us-east-1
+          SECTOR_NAME: ibm-infra
+  - name: aws-vpce-operator-integration-and-stage-catch-alls
+    url: https://github.com/openshift/aws-vpce-operator
+    path: /hack/olm-registry/olm-artifacts-template.yaml
     parameters:
-      REGION: us-west-2
-      SECTOR_NAME: canary
-  - name: aws-vpce-operator-stage-ap-northeast-1-main
-    provider: dynamic
-    namespaceSelector:
-      jsonPathSelectors:
-        include:
-        - namespace[?(@.cluster.name=~"hive.*" & @.name=="cluster-scope" & @.environment.labels.type=="stage")]
-    ref: 1234
-    parameters:
-      REGION: ap-northeast-1
-      SECTOR_NAME: main
-  - name: aws-vpce-operator-stage-eu-central-1-main
-    provider: dynamic
-    namespaceSelector:
-      jsonPathSelectors:
-        include:
-        - namespace[?(@.cluster.name=~"hive.*" & @.name=="cluster-scope" & @.environment.labels.type=="stage")]
-    ref: 1234
-    parameters:
-      REGION: eu-central-1
-      SECTOR_NAME: main
-  - name: aws-vpce-operator-stage-us-west-2-main
-    provider: dynamic
-    namespaceSelector:
-      jsonPathSelectors:
-        include:
-        - namespace[?(@.cluster.name=~"hive.*" & @.name=="cluster-scope" & @.environment.labels.type=="stage")]
-    ref: 1234
-    parameters:
-      REGION: us-west-2
-      SECTOR_NAME: main
-  - name: aws-vpce-operator-stage-us-east-1-ibm-infra
-    provider: dynamic
-    namespaceSelector:
-      jsonPathSelectors:
-        include:
-        - namespace[?(@.cluster.name=~"hive.*" & @.name=="cluster-scope" & @.environment.labels.type=="stage")]
-    ref: 1234
-    parameters:
-      REGION: us-east-1
-      SECTOR_NAME: ibm-infra
-- name: aws-vpce-operator-integration-and-stage-catch-alls
-  url: https://github.com/openshift/aws-vpce-operator
-  path: /hack/olm-registry/olm-artifacts-template.yaml
-  parameters:
-    REGISTRY_IMG: quay.io/app-sre/aws-vpce-operator-registry
-    KNOWN_SECTORS: '["canary", "ibm-infra", "main"]'
-  targets:
-  - name: aws-vpce-operator-integration-all
-    provider: dynamic
-    namespaceSelector:
-      jsonPathSelectors:
-        include:
-        - namespace[?(@.cluster.name=~"hive.*" & @.name=="cluster-scope" & @.environment.labels.type=="integration")]
-    ref: 6cee1df22157d6ec7a22fec55ff06d7a3ed6189b
+      REGISTRY_IMG: quay.io/app-sre/aws-vpce-operator-registry
+      KNOWN_SECTORS: '["canary", "ibm-infra", "main"]'
+    targets:
+      - name: aws-vpce-operator-integration-all
+        provider: dynamic
+        namespaceSelector:
+          jsonPathSelectors:
+            include:
+              - namespace[?(@.cluster.name=~"hive.*" & @.name=="cluster-scope" & @.environment.labels.type=="integration")]
+        ref: 6cee1df22157d6ec7a22fec55ff06d7a3ed6189b
