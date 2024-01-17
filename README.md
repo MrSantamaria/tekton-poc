@@ -105,3 +105,7 @@ but do we restrict pods from creating files like this?
 
 It sounds like you’re running into a security context constraint: https://docs.openshift.com/container-platform/4.14/authentication/managing-security-context-constraints.html#authorization-SCC-[…]ing-internal-oauth
 They can be configured with UID ranges at least^
+
+
+## Troubleshoot PR Merge Task Fail after an hour(Almost Exactly)
+We have to take a look at this and see where we can overwrite this or change the approach. 
