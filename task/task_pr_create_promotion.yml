@@ -18,7 +18,7 @@ spec:
       description: The name of the new branch to create for the PR
   steps:
     - name: update-and-create-pr
-      image: guidoffm/yq-git
+      image: quay.io/dsantama/tekton_poc
       volumeMounts:
         - name: repo-volume
           mountPath: /workspace/repo
@@ -38,9 +38,6 @@ spec:
               name: diego-secrets
               key: GITHUB_TOKEN
       script: |
-        # Update packages and install curl
-        apt-get update && apt-get install -y curl
-
         # Clone the repository with token authentication
         REPO_URL_WITH_TOKEN=$(echo "$(params.repoUrl)" | sed "s|//|//${GITHUB_TOKEN}@|")
         if ! git clone $REPO_URL_WITH_TOKEN /workspace/repo; then
@@ -51,19 +48,18 @@ spec:
 
         # Navigate to the repository
         cd /workspace/repo
-
-        # Configure Git for the repository
-        git config user.email "dsantama@redhat.com"
-        git config user.name "MrSantamaria"
+        pwd
+        ls -la
+        git status
 
         # Update YAML file
         yq eval '.resourceTemplates[] | select(.name == "aws-vpce-operator-stage-sectors").targets[] | select(.name == "aws-vpce-operator-stage-us-west-2-canary").ref = "$(params.imagetag)"' -i $(params.filePath)
         cat $(params.filePath)
 
         # Create new branch and commit changes
-        git checkout -b $(params.branchName)
-        git add $(params.filePath)
-        git commit -m "Update ref value for aws-vpce-operator-stage-us-west-2-canary"
+        git -c user.email="dsantama@redhat.com" -c user.name="MrSantamaria" checkout -b $(params.branchName)
+        git -c user.email="dsantama@redhat.com" -c user.name="MrSantamaria" add $(params.filePath)
+        git -c user.email="dsantama@redhat.com" -c user.name="MrSantamaria" commit -m "Update ref value for aws-vpce-operator-stage-us-west-2-canary"
 
         # Set remote URL with token authentication for push
         git remote set-url origin $REPO_URL_WITH_TOKEN
