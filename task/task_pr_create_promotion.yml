@@ -48,12 +48,9 @@ spec:
 
         # Navigate to the repository
         cd /workspace/repo
-        pwd
-        ls -la
-        git status
 
         # Update YAML file
-        yq eval '.resourceTemplates[] | select(.name == "aws-vpce-operator-stage-sectors").targets[] | select(.name == "aws-vpce-operator-stage-us-west-2-canary").ref = "$(params.imagetag)"' -i $(params.filePath)
+        yq eval '(.resourceTemplates[] | select(.name == "aws-vpce-operator-stage-sectors").targets[] | select(.name == "aws-vpce-operator-stage-us-west-2-canary").ref) = "$(params.imagetag)"' -i $(params.filePath)
         cat $(params.filePath)
 
         # Create new branch and commit changes

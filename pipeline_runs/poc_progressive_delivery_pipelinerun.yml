@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  generateName: poc-progressive-delivery-pipeline-run-
+  generateName: poc-pipeline-run-
 spec:
   pipelineRef:
     name: poc-progressive-delivery-pipeline

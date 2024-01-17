@@ -8,7 +8,16 @@ spec:
       description: URL of the Pull Request
   steps:
     - name: check-pr-merge-status
-      image: curlimages/curl:latest  # Using curl image for demonstration; you might need a different image.
+      image: quay.io/dsantama/tekton_poc
+      securityContext:
+        allowPrivilegeEscalation: false
+        runAsNonRoot: true
+        runAsUser: 1001030000
+        capabilities:
+          drop:
+            - ALL
+        seccompProfile:
+          type: RuntimeDefault
       resources: # Define resource requirements - Since this job could run for a long time the goal is to keep it small.
         requests:
           memory: "64Mi"  # Minimum memory requested
@@ -20,7 +29,7 @@ spec:
         #!/bin/bash
         set -e
 
-        PR_URL="$(params.pr-url)"
+        PR_URL="$(params.prLink)"
 
         # Initialize the time counter (in minutes)
         MAX_TIME=4320  # 3 days in minutes (3*24*60)

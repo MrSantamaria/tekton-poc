@@ -42,7 +42,7 @@ spec:
     #    - name: imagetag
     #      value: $(params.imagetag)
     - name: update-yaml-and-create-pr-task
-      runAfter: []
+      #runAfter: []
         # This job is currently failing but we also don't want to use the runAfter.
         # For now I'll leave it as an empty array since we can come back and adjust it later.
         # - first-task-run-acceptance-test-integration
@@ -57,9 +57,9 @@ spec:
           value: $(params.branchName)
         - name: imagetag
           value: $(params.imagetag)
-    #- name: pr-merge-check
-    #  taskRef:
-    #    name: pr-merge-check
-    #  params:
-    #    - name: prLink
-    #      value: $(tasks.update-yaml-and-create-pr-task.results.prLink)
+    - name: pr-merge-check
+      taskRef:
+        name: pr-merge-check
+      params:
+        - name: prLink
+          value: $(tasks.update-yaml-and-create-pr-task.results.prLink)
