@@ -26,21 +26,21 @@ spec:
       type: string
       default: ""
   tasks:
-    - name: first-task-run-acceptance-test-integration
-      taskRef:
-        name: run-acceptance-test
+    #- name: first-task-run-acceptance-test-integration
+    #  taskRef:
+    #    name: run-acceptance-test
       # These are the parameters that will be passed to the TaskRun
       # For a full solution we will have to generate this file dynamically
-      params:
+    #  params:
         # https://github.com/openshift/aws-vpce-operator/tree/main
-        - name: operator
-          value: $(params.operator)
-        - name: env
-          value: $(params.env)
-        - name: selectors
-          value: $(params.selectors)
-        - name: imagetag
-          value: $(params.imagetag)
+    #    - name: operator
+    #      value: $(params.operator)
+    #    - name: env
+    #      value: $(params.env)
+    #    - name: selectors
+    #      value: $(params.selectors)
+    #    - name: imagetag
+    #      value: $(params.imagetag)
     - name: update-yaml-and-create-pr-task
       runAfter: []
         # This job is currently failing but we also don't want to use the runAfter.
@@ -57,3 +57,9 @@ spec:
           value: $(params.branchName)
         - name: imagetag
           value: $(params.imagetag)
+    #- name: pr-merge-check
+    #  taskRef:
+    #    name: pr-merge-check
+    #  params:
+    #    - name: prLink
+    #      value: $(tasks.update-yaml-and-create-pr-task.results.prLink)

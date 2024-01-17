@@ -16,12 +16,12 @@ spec:
     - name: branchName
       type: string
       description: The name of the new branch to create for the PR
+  results:
+    - name: prLink
+      description: The URL of the created Pull Request
   steps:
     - name: update-and-create-pr
       image: quay.io/dsantama/tekton_poc
-      volumeMounts:
-        - name: repo-volume
-          mountPath: /workspace/repo
       securityContext:
         allowPrivilegeEscalation: false
         runAsNonRoot: true
@@ -75,9 +75,10 @@ spec:
         }
         EOF
         )
-        curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
+        PR_RESPONSE=$(curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" \
         -H "Accept: application/vnd.github.v3+json" \
-        https://api.github.com/repos/MrSantamaria/tekton-poc/pulls -d "$PR_DATA"
-  volumes:
-    - name: repo-volume
-      emptyDir: {}
+        https://api.github.com/repos/MrSantamaria/tekton-poc/pulls -d "$PR_DATA")
+
+        # Extract PR link from the response
+        PR_LINK=$(echo $PR_RESPONSE | jq -r '.html_url')
+        echo $PR_LINK > $(results.prLink.path)
