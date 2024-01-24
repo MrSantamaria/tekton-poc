@@ -1,0 +1,96 @@
+# This yaml is part of the Progressive Delivery POC 
+---
+parameters:
+- name: OPERATOR_NAME
+  value: 'progressive-delivery'
+  required: true
+- name: JOB_NAME
+  value: 'saas-parameter-echo'
+  required: true
+- name: NAMESPACE
+  value: 'cluster-scope'
+  required: true
+- name: JOB_ID
+  generate: expression
+  from: "[0-9a-z]{7}"
+- name: IMAGE_TAG
+  value: ''
+  required: true
+- name: TEST_IMAGE
+  value: quay.io/openshift/origin-tools
+- name: SERVICE_ACCOUNT
+  value: "saas-progressive-delivery-test"
+  displayName: saas-progressive-delivery-test service account
+  description: name of the service account to use when deploying the pod
+- name: REGION
+  value: ""
+- name: SECTOR
+  value: ""
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: ${JOB_NAME}
+objects:
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: ${SERVICE_ACCOUNT}
+    namespace: ${NAMESPACE}
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    name: ${SERVICE_ACCOUNT}
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - namespaces
+    - secrets
+    verbs:
+    - get
+    - list
+  - apiGroups:
+    - hive.openshift.io
+    resources:
+    - clusterdeployments
+    verbs:
+    - get
+    - list
+- kind: ClusterRoleBinding
+  apiVersion: rbac.authorization.k8s.io/v1
+  metadata:
+    name: ${SERVICE_ACCOUNT}
+  subjects:
+  - kind: ServiceAccount
+    name: ${SERVICE_ACCOUNT}
+    namespace: ${NAMESPACE}
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: ${SERVICE_ACCOUNT}
+- apiVersion: batch/v1
+  kind: Job
+  metadata:
+    name: ${JOB_NAME}-${IMAGE_TAG}-${JOB_ID}
+    namespace: ${NAMESPACE}
+  spec:
+    backoffLimit: 2
+    template:
+      spec:
+        restartPolicy: Never
+        serviceAccountName: ${SERVICE_ACCOUNT}
+        containers:
+        - image: ${TEST_IMAGE}
+          imagePullPolicy: Always
+          name: ${JOB_NAME}
+          args:
+          - /bin/bash
+          - -c
+          - |
+            set -x
+            set -o nounset
+            set -o pipefail
+
+            echo "The region was ${REGION}"
+            echo "The sector was ${SECTOR}"
+            echo "The image tag was ${IMAGE_TAG}"
